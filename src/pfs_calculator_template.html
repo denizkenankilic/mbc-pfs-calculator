@@ -1,0 +1,208 @@
+<title>MBC Progression Risk Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --bg:#f5f7f6; --panel:#ffffff; --ink:#15201c; --muted:#5a6661; --line:#dde3e0; --field:#fbfcfb;
+  --accent:#1d6a86; --accent-soft:#e3eff4;
+  --low:#2f7d52; --low-soft:#e2f1e8; --mid:#a56d08; --mid-soft:#f7ecd6; --high:#b03c30; --high-soft:#f7e2df;
+  --bar-pos:#b03c30; --bar-neg:#2f7d52;
+  --sans:"Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#101614; --panel:#18201d; --ink:#e4ebe7; --muted:#9aa7a1; --line:#2c3833; --field:#141b18;
+    --accent:#62b4d2; --accent-soft:#16323c;
+    --low:#6cc592; --low-soft:#16301f; --mid:#e0ae4c; --mid-soft:#3a2c10; --high:#ee8074; --high-soft:#3d1c18;
+    --bar-pos:#ee8074; --bar-neg:#6cc592;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#101614; --panel:#18201d; --ink:#e4ebe7; --muted:#9aa7a1; --line:#2c3833; --field:#141b18;
+  --accent:#62b4d2; --accent-soft:#16323c;
+  --low:#6cc592; --low-soft:#16301f; --mid:#e0ae4c; --mid-soft:#3a2c10; --high:#ee8074; --high-soft:#3d1c18;
+  --bar-pos:#ee8074; --bar-neg:#6cc592;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;margin:0;padding:0 16px}
+.wrap{max-width:1120px;margin:0 auto;padding-block:28px 48px;display:flex;flex-direction:column;gap:22px}
+header h1{font-size:clamp(1.4rem,2.6vw,1.9rem);font-weight:700;letter-spacing:-.01em;margin:0 0 6px;text-wrap:balance}
+header p{margin:0;color:var(--muted);max-width:70ch}
+.eyebrow{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:6px}
+.grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+form{display:flex;flex-direction:column;gap:18px}
+fieldset{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:16px 18px 18px;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px 18px}
+legend{font-weight:600;font-size:.95rem;padding:0 6px}
+.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+.f label{font-size:.82rem;color:var(--muted);font-weight:500}
+.row{display:flex;gap:6px;min-width:0}
+input[type=number],select{font:inherit;font-family:var(--mono);font-size:.9rem;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:7px;padding:7px 9px;min-width:0;width:100%}
+select{font-family:var(--sans)}
+select.unit{width:auto;flex:0 0 auto;font-family:var(--sans);font-size:.8rem}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.check{flex-direction:row;align-items:center;gap:9px}
+.check input{width:18px;height:18px;accent-color:var(--accent);margin:0}
+.check label{color:var(--ink);font-size:.88rem}
+.hint{font-size:.74rem;color:var(--muted)}
+aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 14px);display:flex;flex-direction:column;gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px}
+.risk{display:flex;flex-direction:column;gap:14px}
+.chip{align-self:flex-start;font-weight:700;font-size:.85rem;letter-spacing:.04em;text-transform:uppercase;padding:5px 11px;border-radius:999px}
+.chip.low{background:var(--low-soft);color:var(--low)} .chip.mid{background:var(--mid-soft);color:var(--mid)} .chip.high{background:var(--high-soft);color:var(--high)}
+.probs{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.prob .v{font-family:var(--mono);font-size:1.9rem;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1}
+.prob .k{font-size:.78rem;color:var(--muted)}
+.meter{position:relative;height:10px;border-radius:5px;background:linear-gradient(90deg,var(--low-soft) 0 33.3%,var(--mid-soft) 33.3% 66.6%,var(--high-soft) 66.6%)}
+.meter i{position:absolute;top:-4px;width:4px;height:18px;border-radius:2px;background:var(--ink);transform:translateX(-2px)}
+.meter-l{display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-top:4px}
+h2{font-size:.95rem;margin:0 0 10px;font-weight:600}
+.bars{display:flex;flex-direction:column;gap:6px}
+.bar{display:grid;grid-template-columns:minmax(0,9.5rem) 1fr 3.4rem;align-items:center;gap:8px;font-size:.8rem}
+.bar .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .t{position:relative;height:12px}
+.bar .t::before{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--line)}
+.bar .t b{position:absolute;top:1px;height:10px;border-radius:2px}
+.bar .x{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;color:var(--muted)}
+.note{font-size:.78rem;color:var(--muted);line-height:1.45}
+.note strong{color:var(--ink)}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;font-size:.85rem;font-weight:600;border-radius:7px;padding:8px 13px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+footer{font-size:.76rem;color:var(--muted);max-width:90ch}
+@media (prefers-reduced-motion:no-preference){.meter i{transition:left .25s ease}.bar .t b{transition:all .25s ease}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Research prototype · PFS model M2 (clinical + routine blood tests)</div>
+    <h1>MBC Progression Risk Calculator</h1>
+    <p>Estimates the probability of remaining progression-free at 6 and 12 months for a woman starting systemic chemotherapy for metastatic breast cancer, from routine clinical data and baseline blood tests. The form opens with an example patient.</p>
+  </header>
+
+  <div class="grid">
+    <form id="f" autocomplete="off">
+      <fieldset>
+        <legend>Patient and disease</legend>
+        <div class="f"><label for="age">Age (years)</label><input id="age" type="number" step="1" min="18" max="100"></div>
+        <div class="f"><label for="height">Height (cm)</label><input id="height" type="number" step="1" min="120" max="210"></div>
+        <div class="f"><label for="weight">Weight (kg)</label><input id="weight" type="number" step="0.1" min="30" max="200"></div>
+        <div class="f"><label for="ecog">ECOG performance status</label><select id="ecog"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div>
+        <div class="f"><label for="setting">Line of therapy</label><select id="setting"><option value="0">First-line for metastatic disease</option><option value="1">Pretreated (after taxane/anthracycline)</option></select></div>
+        <div class="f"><label for="n_met_sites">Organ sites involved</label><input id="n_met_sites" type="number" step="1" min="1" max="8"><span class="hint">e.g. liver, bone, nodes = 3</span></div>
+        <div class="f"><label for="n_prior_chemo_adv">Prior chemo lines for metastatic disease</label><input id="n_prior_chemo_adv" type="number" step="1" min="0" max="4"></div>
+        <div class="f check"><input id="visceral_mets" type="checkbox"><label for="visceral_mets">Visceral metastases</label></div>
+        <div class="f check"><input id="measurable" type="checkbox"><label for="measurable">Measurable disease (RECIST)</label></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Previous treatment (any setting)</legend>
+        <div class="f check"><input id="prior_endocrine" type="checkbox"><label for="prior_endocrine">Endocrine therapy</label></div>
+        <div class="f check"><input id="prior_adj_chemo" type="checkbox"><label for="prior_adj_chemo">(Neo)adjuvant chemotherapy</label></div>
+        <div class="f check"><input id="prior_taxane" type="checkbox"><label for="prior_taxane">Taxane</label></div>
+        <div class="f check"><input id="prior_anthracycline" type="checkbox"><label for="prior_anthracycline">Anthracycline</label></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Baseline blood tests</legend>
+        <div class="f"><label for="hgb">Haemoglobin</label><div class="row"><input id="hgb" type="number" step="0.1"><select class="unit" id="hgb_u" aria-label="Haemoglobin unit"><option value="1">g/dL</option><option value="0.1">g/L</option><option value="1.611">mmol/L</option></select></div></div>
+        <div class="f"><label for="wbc">White blood cells (×10⁹/L)</label><input id="wbc" type="number" step="0.1"></div>
+        <div class="f"><label for="anc">Neutrophils (×10⁹/L)</label><input id="anc" type="number" step="0.1"></div>
+        <div class="f"><label for="plt">Platelets (×10⁹/L)</label><input id="plt" type="number" step="1"></div>
+        <div class="f"><label for="alb">Albumin</label><div class="row"><input id="alb" type="number" step="0.1"><select class="unit" id="alb_u" aria-label="Albumin unit"><option value="1">g/dL</option><option value="0.1">g/L</option></select></div></div>
+        <div class="f"><label for="creat">Creatinine</label><div class="row"><input id="creat" type="number" step="0.01"><select class="unit" id="creat_u" aria-label="Creatinine unit"><option value="1">mg/dL</option><option value="0.011310">µmol/L</option></select></div></div>
+        <div class="f"><label for="ca">Calcium (total)</label><div class="row"><input id="ca" type="number" step="0.01"><select class="unit" id="ca_u" aria-label="Calcium unit"><option value="1">mg/dL</option><option value="4.008">mmol/L</option></select></div></div>
+        <div class="f"><label for="alp">ALP (U/L) · lab ULN</label><div class="row"><input id="alp" type="number" step="1" aria-label="ALP value"><input id="alp_uln" type="number" step="1" aria-label="ALP upper limit of normal"></div></div>
+        <div class="f"><label for="ast">AST (U/L) · lab ULN</label><div class="row"><input id="ast" type="number" step="1" aria-label="AST value"><input id="ast_uln" type="number" step="1" aria-label="AST upper limit of normal"></div></div>
+        <div class="f"><label for="bili">Bilirubin · lab ULN (same unit)</label><div class="row"><input id="bili" type="number" step="0.01" aria-label="Bilirubin value"><input id="bili_uln" type="number" step="0.01" aria-label="Bilirubin upper limit of normal"></div></div>
+      </fieldset>
+      <div class="btns"><button type="button" class="primary" id="example">Load example patient</button><button type="button" id="high">Load higher-risk example</button></div>
+    </form>
+
+    <aside aria-live="polite">
+      <div class="card risk">
+        <span class="chip low" id="chip">Low risk</span>
+        <div class="probs">
+          <div class="prob"><div class="v" id="p6">–</div><div class="k">Progression-free at 6 months</div></div>
+          <div class="prob"><div class="v" id="p12">–</div><div class="k">Progression-free at 12 months</div></div>
+        </div>
+        <div>
+          <div class="meter"><i id="mark" style="left:50%"></i></div>
+          <div class="meter-l"><span>Low</span><span>Intermediate</span><span>High</span></div>
+        </div>
+        <div class="note" id="lpnote"></div>
+      </div>
+      <div class="card">
+        <h2>What drives this estimate</h2>
+        <div class="bars" id="bars"></div>
+        <p class="note" style="margin:10px 0 0">Bars show each input's contribution to the log relative hazard compared with the average trial patient. Red raises, green lowers the risk of progression.</p>
+      </div>
+      <div class="card note">
+        <strong>Research use only.</strong> Developed on 1,298 patients from the comparator arms of five phase III trials (Project Data Sphere) with internal–external validation (pooled C-index 0.60, 95% CI 0.57–0.63). Discrimination is modest and calibration varied between trials, so estimates are approximate. Not validated for treatment decisions; patients received chemotherapy-based regimens, and few had HER2-positive disease, so endocrine- or targeted-therapy settings are not represented. “Pretreated” corresponds to the anthracycline- and taxane-pretreated capecitabine-comparator trials; its effect combines prior treatment with regimen differences.
+      </div>
+    </aside>
+  </div>
+
+  <footer>Model: Cox proportional-hazards model with 22 predictors; log-transformed WBC, neutrophils, platelets, creatinine and ALP/AST/bilirubin as multiples of the upper limit of normal; inputs outside the development range are truncated to the 1st/99th percentile. Baseline survival is pooled across trials. Missing entries are replaced by the development-cohort median.</footer>
+</div>
+
+<script>
+const M = __MODEL__;
+const MED = __MEDIANS__;
+const LABEL = {age:"Age",bmi:"BMI",ecog_ge1:"ECOG ≥1",visceral_mets:"Visceral metastases",n_met_sites:"Organ sites",measurable:"Measurable disease",prior_endocrine:"Prior endocrine",prior_adj_chemo:"(Neo)adjuvant chemo",prior_taxane:"Prior taxane",prior_anthracycline:"Prior anthracycline",n_prior_chemo_adv:"Prior metastatic lines",pretreated:"Pretreated setting",hgb:"Haemoglobin",wbc:"WBC",anc:"Neutrophils",plt:"Platelets",alb:"Albumin",alp_uln:"ALP ×ULN",ast_uln:"AST ×ULN",bili_uln:"Bilirubin ×ULN",creat:"Creatinine",ca:"Calcium"};
+const EX = {
+  normal:{age:55,height:162,weight:68,ecog:"0",setting:"0",n_met_sites:2,n_prior_chemo_adv:0,visceral_mets:true,measurable:true,prior_endocrine:true,prior_adj_chemo:true,prior_taxane:false,prior_anthracycline:true,hgb:12.8,hgb_u:"1",wbc:6.2,anc:3.8,plt:260,alb:4.1,alb_u:"1",creat:0.75,creat_u:"1",ca:9.4,ca_u:"1",alp:95,alp_uln:120,ast:25,ast_uln:40,bili:0.5,bili_uln:1.2},
+  high:{age:58,height:160,weight:57,ecog:"1",setting:"1",n_met_sites:3,n_prior_chemo_adv:1,visceral_mets:true,measurable:true,prior_endocrine:false,prior_adj_chemo:true,prior_taxane:true,prior_anthracycline:true,hgb:11.2,hgb_u:"1",wbc:8.4,anc:6.9,plt:320,alb:3.4,alb_u:"1",creat:0.7,creat_u:"1",ca:9.1,ca_u:"1",alp:260,alp_uln:120,ast:78,ast_uln:40,bili:0.9,bili_uln:1.2}
+};
+const $ = id => document.getElementById(id);
+function load(ex){ for (const [k,v] of Object.entries(ex)){ const el=$(k); if(!el) continue; if(el.type==="checkbox") el.checked=v; else el.value=v; } update(); }
+function num(id){ const v=parseFloat($(id).value); return Number.isFinite(v)?v:NaN; }
+function ratio(a,b){ const x=num(a), u=num(b); return (x>0&&u>0)? x/u : NaN; }
+function inputs(){
+  const h=num("height"), w=num("weight");
+  return {
+    age:num("age"), bmi:(h>0&&w>0)? w/((h/100)**2) : NaN,
+    ecog_ge1: +($("ecog").value>=1), visceral_mets:+$("visceral_mets").checked, n_met_sites:num("n_met_sites"),
+    measurable:+$("measurable").checked, prior_endocrine:+$("prior_endocrine").checked, prior_adj_chemo:+$("prior_adj_chemo").checked,
+    prior_taxane:+$("prior_taxane").checked, prior_anthracycline:+$("prior_anthracycline").checked,
+    n_prior_chemo_adv:num("n_prior_chemo_adv"), pretreated:+$("setting").value,
+    hgb:num("hgb")*parseFloat($("hgb_u").value), wbc:num("wbc"), anc:num("anc"), plt:num("plt"),
+    alb:num("alb")*parseFloat($("alb_u").value), alp_uln:ratio("alp","alp_uln"), ast_uln:ratio("ast","ast_uln"),
+    bili_uln:ratio("bili","bili_uln"), creat:num("creat")*parseFloat($("creat_u").value), ca:num("ca")*parseFloat($("ca_u").value)
+  };
+}
+function update(){
+  const x=inputs(); let lp=0; const contrib=[]; let imputed=[];
+  for (const f of M.features){
+    let v=x[f];
+    if(!Number.isFinite(v)){ v=MED[f]; imputed.push(LABEL[f]); }
+    if(M.log_vars.includes(f)) v=Math.log(Math.max(v,1e-3));
+    v=Math.min(Math.max(v,M.lo[f]),M.hi[f]);
+    const c=M.coef[f]*(v-M.mu[f])/M.sd[f];
+    lp+=c; contrib.push([f,c]);
+  }
+  const s6=Math.pow(M.baseline_survival["6"],Math.exp(lp)), s12=Math.pow(M.baseline_survival["12"],Math.exp(lp));
+  $("p6").textContent=Math.round(s6*100)+"%"; $("p12").textContent=Math.round(s12*100)+"%";
+  const [t1,t2]=M.lp_tertiles; const chip=$("chip");
+  const g = lp<t1? ["low","Low risk"] : lp<t2? ["mid","Intermediate risk"] : ["high","High risk"];
+  chip.className="chip "+g[0]; chip.textContent=g[1];
+  // meter: map lp so tertile cut-points sit at 1/3 and 2/3
+  const span=t2-t1; let pos = lp<t1 ? 33.3 - (t1-lp)/span*33.3 : lp<t2 ? 33.3+(lp-t1)/span*33.3 : 66.6+(lp-t2)/span*33.3;
+  $("mark").style.left=Math.min(98,Math.max(2,pos))+"%";
+  $("lpnote").textContent = `Linear predictor ${lp>=0?"+":""}${lp.toFixed(2)} (relative hazard ${Math.exp(lp).toFixed(2)} vs the average trial patient).` + (imputed.length? ` Filled with cohort median: ${imputed.join(", ")}.` : "");
+  contrib.sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
+  const top=contrib.slice(0,8), mx=Math.max(0.15,...top.map(c=>Math.abs(c[1])));
+  $("bars").innerHTML = top.map(([f,c])=>{
+    const w=Math.abs(c)/mx*50; const left=c>=0?50:50-w; const col=c>=0?"var(--bar-pos)":"var(--bar-neg)";
+    return `<div class="bar"><span class="n">${LABEL[f]}</span><span class="t"><b style="left:${left}%;width:${w}%;background:${col}"></b></span><span class="x">${c>=0?"+":"−"}${Math.abs(c).toFixed(2)}</span></div>`;
+  }).join("");
+}
+document.getElementById("f").addEventListener("input", update);
+document.getElementById("f").addEventListener("submit", e=>e.preventDefault());
+$("example").addEventListener("click", ()=>load(EX.normal));
+$("high").addEventListener("click", ()=>load(EX.high));
+load(EX.normal);
+</script>
