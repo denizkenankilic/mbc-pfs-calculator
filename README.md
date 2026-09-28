@@ -49,7 +49,7 @@ Seed 2026 throughout. The calculator (dst/mbc_pfs_calculator.html) embeds output
 
 ## Online calculator (research use only)
 
-**Open it:** https://YOUR-USERNAME.github.io/mbc-pfs-calculator/ (the file `index.html` in this repository; it also works offline — download it and open it in any web browser).
+**Open it:** https://denizkenankilic.github.io/mbc-pfs-calculator/ (the file `index.html` in this repository; it also works offline — download it and open it in any web browser).
 
 ### What it does
 For a woman with metastatic breast cancer who is starting chemotherapy-based treatment, the calculator estimates the probability of being **progression-free at 6 and 12 months**, using routine clinical information and baseline blood tests. It implements the final clinical-plus-blood Cox model (M2) from the article, developed on 1,298 patients from the comparator arms of five phase III trials and validated by internal–external cross-validation (pooled C-index 0.60, 95% CI 0.57–0.63).
